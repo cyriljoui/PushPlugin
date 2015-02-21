@@ -4,7 +4,9 @@ import android.app.NotificationManager;
 import android.content.Context;
 import android.os.Bundle;
 import android.util.Log;
+
 import com.google.android.gcm.GCMRegistrar;
+
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaInterface;
 import org.apache.cordova.CordovaPlugin;
@@ -30,7 +32,7 @@ public class PushPlugin extends CordovaPlugin {
 	private static String gECB;
 	private static String gSenderID;
 	private static Bundle gCachedExtras = null;
-    private static boolean gForeground = false;
+    private static boolean gForeground = true;
 
 	/**
 	 * Gets the application context from cordova's main activity.
@@ -62,7 +64,18 @@ public class PushPlugin extends CordovaPlugin {
 
 				Log.v(TAG, "execute: ECB=" + gECB + " senderID=" + gSenderID);
 
-				GCMRegistrar.register(getApplicationContext(), gSenderID);
+				// Already registered?
+				String regId = GCMRegistrar.getRegistrationId(getApplicationContext());
+				if (regId == null) {
+					Log.d(TAG, "New registration needed");
+					GCMRegistrar.register(getApplicationContext(), gSenderID);
+				} else {
+					Log.d(TAG, "Already registered! go on directly ...");
+					callbackContext.success();
+					// Result
+					sendJavascriptRegistered(regId);
+				}
+
 				result = true;
 				callbackContext.success();
 			} catch (JSONException e) {
@@ -242,4 +255,26 @@ public class PushPlugin extends CordovaPlugin {
     {
     	return gWebView != null;
     }
+
+	public static void sendJavascriptRegistered(String regId) {
+		JSONObject json;
+
+		try
+		{
+			json = new JSONObject().put("event", "registered");
+			json.put("regid", regId);
+
+			Log.v(TAG, "onRegistered: " + json.toString());
+
+			// Send this JSON data to the JavaScript application above EVENT should be set to the msg type
+			// In this case this is the registration ID
+			sendJavascript( json );
+
+		}
+		catch( JSONException e)
+		{
+			// No message to the user is sent, JSON failed
+			Log.e(TAG, "onRegistered: JSON exception");
+		}		
+	}
 }

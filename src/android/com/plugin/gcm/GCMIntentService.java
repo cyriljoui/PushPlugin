@@ -28,26 +28,8 @@ public class GCMIntentService extends GCMBaseIntentService {
 	public void onRegistered(Context context, String regId) {
 
 		Log.v(TAG, "onRegistered: "+ regId);
+		PushPlugin.sendJavascriptRegistered(regId);
 
-		JSONObject json;
-
-		try
-		{
-			json = new JSONObject().put("event", "registered");
-			json.put("regid", regId);
-
-			Log.v(TAG, "onRegistered: " + json.toString());
-
-			// Send this JSON data to the JavaScript application above EVENT should be set to the msg type
-			// In this case this is the registration ID
-			PushPlugin.sendJavascript( json );
-
-		}
-		catch( JSONException e)
-		{
-			// No message to the user is sent, JSON failed
-			Log.e(TAG, "onRegistered: JSON exception");
-		}
 	}
 
 	@Override
